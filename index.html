@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Asistencia QR - Consolidado Mensual Avanzado</title>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1e3d59;
+            --secondary: #17b978;
+            --accent: #ff6e40;
+            --light: #f5f7fa;
+            --dark: #2b2d42;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --gray: #7f8c8d;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e4e7eb;
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px; text-transform: uppercase; font-size: 1.6rem; }
+        .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 25px; font-weight: 600; }
+        
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            background: var(--light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--primary);
+        }
+        .header-info label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.9rem; color: var(--primary); }
+        .header-info input, .header-info select {
+            width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem;
+        }
+
+        /* Estructura en dos columnas (Izquierda: Cámara, Derecha: Ventana en vivo) */
+        .main-scanner-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 25px;
+        }
+
+        .scanner-section {
+            text-align: center; padding: 20px;
+            border: 2px dashed #94a3b8; border-radius: 8px; background: #fafbfc;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        /* Cámara más grande */
+        #reader { width: 100%; max-width: 500px; margin: 15px auto; border-radius: 8px; overflow: hidden; display: none; }
+        
+        /* Ventana de escaneos en vivo (Lado Derecho) */
+        #liveScannerWindow {
+            display: none;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: left;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .live-table-container {
+            max-height: 320px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 25px; }
+        button {
+            padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold;
+            cursor: pointer; color: white; transition: all 0.2s ease; text-transform: uppercase; font-size: 0.85rem;
+        }
+        button:hover { transform: translateY(-1px); opacity: 0.9; }
+        .btn-cam { background-color: #2980b9; }
+        .btn-report { background-color: #d35400; }
+        .btn-print { background-color: #8e44ad; }
+        .btn-delete { background-color: var(--danger); }
+        .btn-periodo { background-color: #27ae60; }
+        .btn-stats { background-color: #009688; }
+        .btn-save { background-color: #27ae60; }
+
+        .status-box {
+            padding: 15px; border-radius: 6px; text-align: center;
+            font-size: 1.1rem; font-weight: bold; margin-bottom: 25px; display: none;
+        }
+        .status-temprano { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-tarde { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); overflow: auto; padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background-color: white; margin: 1% auto; padding: 25px;
+            width: 98%; max-width: 98vw; border-radius: 10px; position: relative;
+            box-sizing: border-box;
+        }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: var(--danger); }
+
+        .selector-bar {
+            margin: 15px 0; padding: 12px; background: var(--light); border-radius: 6px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 15px; justify-content: center;
+        }
+        .selector-bar select, .selector-bar input {
+            padding: 8px 12px; font-size: 0.95rem; border-radius: 5px; border: 1px solid #cbd5e1; font-weight: bold;
+        }
+
+        .periodo-box {
+            background: #e8f4fd; border: 1px solid #bbeecc; padding: 10px 15px; border-radius: 6px;
+            margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: center; font-size: 0.85rem;
+        }
+
+        .table-responsive { 
+            overflow-x: auto; 
+            overflow-y: auto; 
+            margin-top: 15px; 
+            max-height: 78vh; 
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; white-space: nowrap; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center; }
+        th { background-color: var(--primary); color: white; vertical-align: middle; position: sticky; top: 0; z-index: 5; }
+        
+        th.summary-header { color: #000000 !important; }
+
+        td:nth-child(2) { text-align: left; } 
+        tr:nth-child(even) { background-color: #f8fafc; }
+        
+        .badge { display: inline-block; width: 22px; height: 22px; line-height: 22px; border-radius: 4px; color: white; font-weight: bold; font-size: 0.7rem; }
+        .badge-t { background-color: var(--success); } 
+        .badge-a { background-color: var(--warning); } 
+        .badge-f { background-color: var(--gray); } 
+
+        .col-dia { font-size: 0.8rem; font-weight: bold; }
+        .col-sub { font-size: 0.65rem; color: #e2e8f0; font-weight: normal; }
+
+        .summary-cell { font-weight: bold; background-color: #edf2f7; }
+        .total-row { background-color: #dfe6e9 !important; font-weight: bold; font-size: 0.85rem; }
+
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .chart-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .stats-summary-text {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            text-align: left;
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 900px) {
+            .main-scanner-layout { grid-template-columns: 1fr; }
+        }
+
+        /* Configuración de Impresión Inteligente */
+        @media print {
+            body * { visibility: hidden; }
+            #liveScannerWindow, #liveScannerWindow * { visibility: visible; }
+            #liveScannerWindow {
+                position: absolute; left: 0; top: 0; width: 100%;
+                border: none; box-shadow: none; padding: 0; margin: 0;
+            }
+            #liveScannerWindow button { display: none !important; }
+            .live-table-container { max-height: none !important; overflow: visible !important; border: none !important; }
+            table { width: 100% !important; font-size: 10pt; }
+            th, td { padding: 8px; border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Control de Asistencia Escolar QR</h1>
+    <div class="subtitle">Institución Educativa - Niveles 1° a 5° de Secundaria</div>
+
+    <div class="header-info">
+        <div>
+            <label>Nombre del Auxiliar:</label>
+            <input type="text" id="auxiliarName" placeholder="Ingrese nombre del auxiliar">
+        </div>
+        <div>
+            <label>Año Lectivo:</label>
+            <input type="text" id="anioLectivo" value="2026">
+        </div>
+        <div>
+            <label>Fecha de Hoy:</label>
+            <input type="text" id="currentDate" readonly>
+        </div>
+    </div>
+
+    <!-- Layout en dos columnas -->
+    <div class="main-scanner-layout">
+        <!-- Lado Izquierdo: Cámara más grande -->
+        <div class="scanner-section">
+            <button class="btn-cam" onclick="toggleCamera()">📷 Activar / Detener Cámara QR</button>
+            <div id="reader"></div>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: #e67e22; font-weight: bold;">⚡ Los escaneos se guardan AUTOMÁTICAMENTE al instante.</p>
+        </div>
+
+        <!-- Lado Derecho: Ventana en tiempo real -->
+        <div id="liveScannerWindow">
+            <h3 style="margin-top: 0; color: var(--primary); font-size: 1rem; text-align: center;">📋 Estudiantes Escaneados Hoy (Últimos arriba)</h3>
+            <div class="live-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th style="text-align: left;">Apellidos y Nombres</th>
+                            <th>Grado</th>
+                            <th>Estado</th>
+                            <th>Hora de Llegada</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liveScanBody">
+                        <tr><td colspan="5" style="color: #7f8c8d;">Esperando escaneos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-save" onclick="guardarSesionEnDirecto()">💾 Guardar Registro</button>
+                <button class="btn-print" onclick="window.print()">🖨️ Imprimir Lista</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusBox" class="status-box"></div>
+
+    <div class="btn-group">
+        <button class="btn-report" onclick="abrirReporteConsolidado()">📋 Ver Consolidado Mensual</button>
+        <button class="btn-delete" onclick="eliminarDatosConsolidado()">🗑️ Eliminar Datos de Consolidado</button>
+    </div>
+</div>
+
+<!-- Modal Consolidado Mensual Ampliado -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <span class="close no-print" onclick="cerrarModal()">&times;</span>
+        <h2 style="text-align: center; color: var(--primary); margin-top: 0;">CONSOLIDADO MENSUAL DE ASISTENCIA</h2>
+        
+        <div class="header-info" style="font-size: 0.85rem; padding: 8px; margin-bottom: 10px;">
+            <span><strong>Auxiliar:</strong> <span id="resAux">---</span></span>
+            <span><strong>Año:</strong> <span id="resAnio">---</span></span>
+            <span><strong>Seleccionar Mes:</strong> <input type="month" id="mesSeleccionado" onchange="actualizarVistaActiva()" style="padding: 3px; font-size:0.85rem;"></span>
+        </div>
+
+        <div class="periodo-box no-print">
+            <strong>📅 Sumar Faltas por Periodo:</strong>
+            <label>Desde: <input type="date" id="periodoInicio" style="padding: 4px; font-size: 0.8rem;"></label>
+            <label>Hasta: <input type="date" id="periodoFin" style="padding: 4px; font-size: 0.8rem;"></label>
+            <button class="btn-periodo" onclick="actualizarVistaActiva()" style="padding: 6px 12px; font-size: 0.8rem;">Aplicar Periodo a Faltas</button>
+        </div>
+
+        <div class="selector-bar no-print">
+            <label>Seleccione Grado:</label>
+            <select id="gradoSelect" onchange="actualizarVistaActiva()">
+                <option value="">-- Elija Grado --</option>
+                <option value="1">1° Grado</option>
+                <option value="2">2° Grado</option>
+                <option value="3">3° Grado</option>
+                <option value="4">4° Grado</option>
+                <option value="5">5° Grado</option>
+            </select>
+            <button class="btn-stats" onclick="alternarVista('stats')" style="padding: 8px 15px; font-size: 0.85rem;">📊 Datos Estadísticos</button>
+            <button class="btn-report" onclick="alternarVista('table')" style="padding: 8px 15px; font-size: 0.85rem;">📋 Ver Tabla</button>
+        </div>
+
+        <div id="tablaConsolidadoContainer">
+            <p style="text-align: center; color: #7f8c8d; padding: 20px;">Seleccione un grado y un mes para visualizar la matriz completa.</p>
+        </div>
+
+        <div id="estadisticasContainer" style="display: none;">
+            <div class="stats-container">
+                <div class="chart-card">
+                    <h3 style="color: var(--primary); margin-top: 0;">Gráfico Global de Asistencia</h3>
+                    <div style="position: relative; width: 280px; height: 280px; margin: 0 auto;">
+                        <canvas id="pieChartAsistencia"></canvas>
+                    </div>
+                    <div id="statsTextDetails" class="stats-summary-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group no-print" style="margin-top: 15px;">
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir Consolidado Completo</button>
+            <button style="background: #7f8c8d;" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const baseDatosEstudiantes = {
+        "1": [
+            { nombre: "ABURTO PEREZ NARDA" }, { nombre: "ABURTO ZAMUDIO ANA TALIA" }, { nombre: "AVALOS HERRERA THIAGO" },
+            { nombre: "AVALOS CHUMPITAZ ZOE" }, { nombre: "CHUMPITAZ BALTAZAR KIARA" }, { nombre: "CRISPIN QUISPE DAYRO" },
+            { nombre: "FLORES SAAVEDRA ALEJANDRA" }, { nombre: "GARCIA FERNANDEZ BANDES WILLIAM" }, { nombre: "MALASQUEZ CHUMPITAZ ANGEL" },
+            { nombre: "MALASQUEZ CHUMPITAZ ROXETTE" }, { nombre: "MALASQUEZ LOZANO ANAHI" }, { nombre: "MALASQUEZ VILLALOBOS KAZUMI" },
+            { nombre: "OCHOA QUISPE ARELIZ AIXA" }, { nombre: "PIGUAY VASQUEZ LUIS GERARD" }, { nombre: "PIZANGO FLORES SELVIA" },
+            { nombre: "RAMOS CAMPOS XIARA" }, { nombre: "SILOPU ARCOS FREDY" }, { nombre: "SILVA MONTILLA YOSGUER" },
+            { nombre: "VILLALOBOS QUISPE LUIS" }, { nombre: "VILLALOBOS CAMACHO JEAN CARLOS" }, { nombre: "ZAMUDIO AVALOS MARIA" },
+            { nombre: "SALAZAR NEYRA JAIRO" }
+        ],
+        "2": [
+            { nombre: "ABURTO ZAVALA NAIRA MAITE" }, { nombre: "ACUÑA QUISPE ALICIA NICOLE" }, { nombre: "AGUILAR NEYRA ESEFANI ABIGAIL" },
+            { nombre: "ARCOS EGUSQUIZA LEONARDO" }, { nombre: "ARIAS LIMA ALESSIA BRIANA" }, { nombre: "ARIAS SALINAS KAHORI MARLENY" },
+            { nombre: "ARIAS VILLALOBOS JEAN POOL" }, { nombre: "AVALOS ARIAS JOSE MARIA" }, { nombre: "BENAVENTE MALASQUEZ ISAAC EDUARDO" },
+            { nombre: "CANDELA CASTILLO ESTEBAN" }, { nombre: "CANDELA PEREZ JASUE" }, { nombre: "CASILLA ARCOS KAORY KATSUMY" },
+            { nombre: "CHUMPITAZ ROSAS VALESKA ELIZABETH" }, { nombre: "DIAZ ARIAS AGELI" }, { nombre: "FLORES SAAVEDRA FABIANA YACET" },
+            { nombre: "LARA PAREDES ROSA FERNANADA" }, { nombre: "MENDIGUETE ACUÑA FRANCO NICOLAS" }, { nombre: "MEZA CHUMPITAZ DAYANA BEATRIZ" },
+            { nombre: "QUISPE FRANCIA LUISA MARIA" }, { nombre: "RODRIGUEZ ABURTO MARIA GUADALUPE" }, { nombre: "VILLALOBOS ARIAS OSSTIN JOSUE" },
+            { nombre: "ZAPATA HERRERA BYRON" }, { nombre: "SALAZAR NEIRA ANI" }, { nombre: "ESPINO MENDOZA NAHUM JHOKADY" },
+            { nombre: "GARCIA ARIAS JIMENA" }
+        ],
+        "3": [
+            { nombre: "ALLANTA QUIROZ THAMARA LUCIA" }, { nombre: "AVALOS ORBE SARAI KARUMI" }, { nombre: "AVALOS VASQUEZ JUAN JOSE" },
+            { nombre: "CAMPOS MERCADO KATHERINE" }, { nombre: "CARBAJAL RIVERA EDGAR GEORGE GABRIEL" }, { nombre: "CASTELL TENEMAS NAYLIN YAMIL" },
+            { nombre: "CHOZ CISNEROS JUAN ANDRES" }, { nombre: "CHUMPITAZ CERRON HARUMI XIOMARA" }, { nombre: "DAVILA VARGAS JHELEN NAOMI" },
+            { nombre: "ESQUEN MEJIA DARREL ANDRE" }, { nombre: "FRANCIA HERNANDEZ EDISON JOSEMARIA" }, { nombre: "GARCIA MALASQUEZ TAYRA ANGELY" },
+            { nombre: "LEON CHUMPITAZ DYLAN MANUEL ANDRES" }, { nombre: "MALASQUEZ ABURTO JHEFREE GONZALO" }, { nombre: "PIGUAY DOMINGUEZ MARIA DE LOS ANGELES" },
+            { nombre: "RAMOS ANGULO KRIZIA ZAGHENY MARCELA" }, { nombre: "RENGIFO QUISPE MONICA KAORI" }, { nombre: "SANCHEZ CAMPOS DREY ABDUL" },
+            { nombre: "SAUREZ SANCHEZ BRUCE WILLIANS" }, { nombre: "VILLALOBOS CAMACHO GUADALUPE" }, { nombre: "VILLALOBOS SAIRE SITA TAKURANI" },
+            { nombre: "VILLALOBOS VILLALOBOS PARVATI DEVI" }, { nombre: "MALASQUEZ PARIONA ROSA MARIA" }
+        ],
+        "4": [
+            { nombre: "ABURTO GUZMAN LUHANA KAHORI" }, { nombre: "ARIAS ACUÑA JOSIANA MARIA V." }, { nombre: "ARIAS QUISPE JOSE GONZALO" },
+            { nombre: "ARIAS RAMOS ROBERTO" }, { nombre: "ARQUIÑEVA AVALOS MELANY REBECA" }, { nombre: "AVALOS SANCHEZ MARIA ELITIA NAOMI" },
+            { nombre: "CASTAÑEDA HUAPAYA LUANA GAHELA" }, { nombre: "CRISPIN QUISPE ANDRELY SOLEDAD" }, { nombre: "CHUMPITAZ ROJAS MARIA ALMENDRA" },
+            { nombre: "CHUMPITAZ ROSAS AIME MARLENE" }, { nombre: "GARCIA MARCA BLENI YUZELI" }, { nombre: "GARCIA ORE THIAGO MATEO" },
+            { nombre: "GARCIA VILLALOBOS NISHINJA DEVA" }, { nombre: "MEZA QUISPE GENESIS ROSSMERY" }, { nombre: "MOYA CASTILLO ANDREA ALEXANDRA" },
+            { nombre: "NARRO ARIAS GREACE DAYANNA" }, { nombre: "RAMOS AVALOS YERIK ANYELO YAMIL" }, { nombre: "TASAYCO ROJAS ALVARO YHAJAIRO" },
+            { nombre: "TOMAS PULIDO ALLISON TATIANA" }
+        ],
+        "5": [
+            { nombre: "ABURTO PEREZ YASMIN GABRIELA" }, { nombre: "ALIAGA MANIHUARI LEONARDO DAVID" }, { nombre: "ANGELES CHUMPITAZ CHERLIT FIORELLA" },
+            { nombre: "ARANA VILCA MARIA" }, { nombre: "ARIAS CAMPOS FABIAN ALEXANDER" }, { nombre: "ARIAS LIMA AXEL FRANCISCO" },
+            { nombre: "ARIAS VILLALOBOS YASURI" }, { nombre: "AVALOS AVALOS LUHANA BELEN" }, { nombre: "AVALOS QUISPE VICTOR ALONSO SAMIR" },
+            { nombre: "CAMPOS AQUINO ABIGAIL GUADALUPE" }, { nombre: "CAMPOS BARTOLO DANY DANIEL" }, { nombre: "CAMPOS NAPAN LUZ ANDREA" },
+            { nombre: "CAMPOS SOLER KATSUMI SAHORI" }, { nombre: "CAMPOS YAYA DENNISE YOELI" }, { nombre: "CANDELA CHAVEZ STEPHANO DENILSON" },
+            { nombre: "CANDELA PACHECO DAYANA ANTUANET" }, { nombre: "CASTILLO CAMPOS ROSA RUBI RINA" }, { nombre: "DAVILA ZAVALA CELESTE ADRIANA" },
+            { nombre: "GARCIA MALASQUEZ ALESSIA ISABEL" }, { nombre: "GARCIA MALASQUEZ FERGIE ESMERALDA" }, { nombre: "GARCIA VILLALOBOS VRNDA DEVI" },
+            { nombre: "PAZ BERRU NEYSER YOEL" }, { nombre: "PELAEZ AVALOS MARJORIE ESPERANZA" }, { nombre: "QUIQUIA VAZQUEZ YASUMI XIOMARA" },
+            { nombre: "RODRIGUEZ ANGULO JIORDANA R." }, { nombre: "ROJAS MEDINA ARIADNA IVANA" }, { nombre: "SANCHEZ ROSAS JUAN PABLO" },
+            { nombre: "SILOPU ARCOS MARIA DEL CARMEN" }, { nombre: "SUAREZ ARCOS AYTANA MARIA M." }, { nombre: "SUAREZ SANCHEZ DEYVID DAVID" }
+        ]
+    };
+
+    let baseAsistencias = JSON.parse(localStorage.getItem('qr_asistencias_mensual')) || {};
+    let vistaActual = 'table';
+    let miGraficoCircular = null;
+
+    const hoyObj = new Date();
+    document.getElementById('currentDate').value = hoyObj.toLocaleDateString();
+    
+    const yyyy = hoyObj.getFullYear();
+    const mm = String(hoyObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoyObj.getDate()).padStart(2, '0');
+    const fechaKeyHoy = `${yyyy}-${mm}-${dd}`;
+
+    document.getElementById('mesSeleccionado').value = `${yyyy}-${mm}`;
+    document.getElementById('periodoInicio').value = `${yyyy}-${mm}-01`;
+    document.getElementById('periodoFin').value = fechaKeyHoy;
+
+    let scannerQR = null;
+
+    function toggleCamera() {
+        const readerEl = document.getElementById('reader');
+        const liveWin = document.getElementById('liveScannerWindow');
+
+        if (!scannerQR) {
+            readerEl.style.display = 'block';
+            liveWin.style.display = 'block';
+            actualizarTablaEnVivo();
+            scannerQR = new Html5Qrcode("reader");
+            scannerQR.start({ facingMode: "environment" }, { fps: 10, qrbox: 300 }, onScanSuccess);
+        } else {
+            scannerQR.stop().then(() => {
+                scannerQR = null;
+                readerEl.style.display = 'none';
+                liveWin.style.display = 'none';
+            });
+        }
+    }
+
+    function onScanSuccess(decodedText) {
+        let nombre = decodedText.trim().toUpperCase();
+        let gradoEncontrado = null;
+
+        for (let g in baseDatosEstudiantes) {
+            if (baseDatosEstudiantes[g].some(e => e.nombre === nombre)) {
+                gradoEncontrado = g;
+                break;
+            }
+        }
+
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+
+        if (!gradoEncontrado) {
+            box.className = "status-box status-tarde";
+            box.innerText = `❌ No encontrado en base de datos: "${nombre}"`;
+            return;
+        }
+
+        const ahora = new Date();
+        const horaStr = ahora.toTimeString().split(' ')[0];
+        const h = ahora.getHours();
+        const m = ahora.getMinutes();
+        const tDecimal = h + m / 60;
+
+        let estado = (tDecimal >= 7.0 && tDecimal < 8.0) ? "T" : "A";
+        
+        if (estado === "T") {
+            box.className = "status-box status-temprano";
+            box.innerText = `✅ TEMPRANO (Automático): ${nombre} (${gradoEncontrado}°) - ${horaStr}`;
+        } else {
+            box.className = "status-box status-tarde";
+            box.innerText = `⚠️ TARDE (Automático): ${nombre} (${gradoEncontrado}°) - ${horaStr}`;
+        }
+
+        if (!baseAsistencias[fechaKeyHoy]) {
+            baseAsistencias[fechaKeyHoy] = {};
+        }
+
+        baseAsistencias[fechaKeyHoy][nombre] = {
+            estado: estado,
+            hora: horaStr,
+            grado: gradoEncontrado
+        };
+
+        localStorage.setItem('qr_asistencias_mensual', JSON.stringify(baseAsistencias));
+        actualizarTablaEnVivo();
+    }
+
+    function actualizarTablaEnVivo() {
+        const tbody = document.getElementById('liveScanBody');
+        let registrosHoy = baseAsistencias[fechaKeyHoy] || {};
+        let keys = Object.keys(registrosHoy);
+
+        if (keys.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="color: #7f8c8d;">Aún no hay escaneos registrados hoy.</td></tr>';
+            return;
+        }
+
+        let keysInvertidas = keys.reverse();
+
+        let html = '';
+        let contador = 1;
+        keysInvertidas.forEach(nombre => {
+            let reg = registrosHoy[nombre];
+            let badgeClass = reg.estado === 'T' ? 'badge-t' : 'badge-a';
+            let estadoTexto = reg.estado === 'T' ? 'Temprano (T)' : 'Tarde (A)';
+
+            html += `<tr>`;
+            html += `<td>${contador++}</td>`;
+            html += `<td style="font-weight: 500;">${nombre}</td>`;
+            html += `<td>${reg.grado}° Grado</td>`;
+            html += `<td><span class="badge ${badgeClass}">${reg.estado}</span> ${estadoTexto}</td>`;
+            html += `<td><strong>${reg.hora}</strong></td>`;
+            html += `</tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function guardarSesionEnDirecto() {
+        localStorage.setItem('qr_asistencias_mensual', JSON.stringify(baseAsistencias));
+        alert("¡Los registros escaneados en directo se han guardado correctamente en el sistema!");
+    }
+
+    function abrirReporteConsolidado() {
+        document.getElementById('resAux').innerText = document.getElementById('auxiliarName').value || "No especificado";
+        document.getElementById('resAnio').innerText = document.getElementById('anioLectivo').value;
+        document.getElementById('reportModal').style.display = 'block';
+        renderizarConsolidadoMensual();
+    }
+
+    function cerrarModal() {
+        document.getElementById('reportModal').style.display = 'none';
+    }
+
+    function eliminarDatosConsolidado() {
+        if (confirm("¿Estás seguro de que deseas eliminar todos los datos registrados en el consolidado de asistencia? Esta acción no se puede deshacer.")) {
+            localStorage.removeItem('qr_asistencias_mensual');
+            baseAsistencias = {};
+            actualizarTablaEnVivo();
+            
+            if (document.getElementById('reportModal').style.display === 'block') {
+                renderizarConsolidadoMensual();
+            }
+            
+            const box = document.getElementById('statusBox');
+            box.style.display = 'block';
+            box.className = "status-box status-tarde";
+            box.innerText = "🗑️ Todos los datos del consolidado han sido eliminados correctamente.";
+        }
+    }
+
+    function obtenerDiasHabilesMes(anio, mes) {
+        let dias = [];
+        let date = new Date(anio, mes - 1, 1);
+        while (date.getMonth() === mes - 1) {
+            let dayOfWeek = date.getDay();
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                let yyyy = date.getFullYear();
+                let mm = String(date.getMonth() + 1).padStart(2, '0');
+                let dd = String(date.getDate()).padStart(2, '0');
+                let letrasMap = { 1: 'L', 2: 'M', 3: 'MI', 4: 'J', 5: 'V' };
+                dias.push({
+                    fechaKey: `${yyyy}-${mm}-${dd}`,
+                    letra: letrasMap[dayOfWeek],
+                    diaMes: date.getDate(),
+                    mesNum: date.getMonth() + 1
+                });
+            }
+            date.setDate(date.getDate() + 1);
+        }
+        return dias;
+    }
+
+    function obtenerFechasEntre(fechaInicioStr, fechaFinStr) {
+        let fechas = [];
+        if (!fechaInicioStr || !fechaFinStr) return fechas;
+        let curr = new Date(fechaInicioStr + 'T00:00:00');
+        let last = new Date(fechaFinStr + 'T00:00:00');
+        while (curr <= last) {
+            let dayOfWeek = curr.getDay();
+            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                let yyyy = curr.getFullYear();
+                let mm = String(curr.getMonth() + 1).padStart(2, '0');
+                let dd = String(curr.getDate()).padStart(2, '0');
+                fechas.push(`${yyyy}-${mm}-${dd}`);
+            }
+            curr.setDate(curr.getDate() + 1);
+        }
+        return fechas;
+    }
+
+    function alternarVista(tipo) {
+        vistaActual = tipo;
+        const tablaCont = document.getElementById('tablaConsolidadoContainer');
+        const statsCont = document.getElementById('estadisticasContainer');
+
+        if (tipo === 'table') {
+            tablaCont.style.display = 'block';
+            statsCont.style.display = 'none';
+            renderizarConsolidadoMensual();
+        } else {
+            tablaCont.style.display = 'none';
+            statsCont.style.display = 'block';
+            renderizarEstadisticas();
+        }
+    }
+
+    function actualizarVistaActiva() {
+        if (vistaActual === 'table') {
+            renderizarConsolidadoMensual();
+        } else {
+            renderizarEstadisticas();
+        }
+    }
+
+    function calcularDatosTotalesGrado() {
+        const gradoSel = document.getElementById('gradoSelect').value;
+        const mesInput = document.getElementById('mesSeleccionado').value;
+
+        if (!gradoSel || !mesInput) return null;
+
+        let [anioStr, mesStr] = mesInput.split('-');
+        let anio = parseInt(anioStr);
+        let mes = parseInt(mesStr);
+
+        let diasMes = obtenerDiasHabilesMes(anio, mes);
+        let estudiantes = baseDatosEstudiantes[gradoSel];
+
+        let pInicio = document.getElementById('periodoInicio').value;
+        let pFin = document.getElementById('periodoFin').value;
+        let fechasPeriodoFaltas = obtenerFechasEntre(pInicio, pFin);
+
+        let sumaT = 0;
+        let sumaA = 0;
+        let sumaF = 0;
+
+        estudiantes.forEach(est => {
+            diasMes.forEach(d => {
+                let regDia = baseAsistencias[d.fechaKey] && baseAsistencias[d.fechaKey][est.nombre];
+                if (regDia) {
+                    if (regDia.estado === 'T') sumaT++;
+                    else if (regDia.estado === 'A') sumaA++;
+                }
+            });
+
+            if (fechasPeriodoFaltas.length > 0) {
+                fechasPeriodoFaltas.forEach(fKey => {
+                    let reg = baseAsistencias[fKey] && baseAsistencias[fKey][est.nombre];
+                    if (!reg || (reg.estado !== 'T' && reg.estado !== 'A')) {
+                        sumaF++;
+                    }
+                });
+            }
+        });
+
+        return { sumaT, sumaA, sumaF };
+    }
+
+    function renderizarConsolidadoMensual() {
+        const gradoSel = document.getElementById('gradoSelect').value;
+        const mesInput = document.getElementById('mesSeleccionado').value;
+        const container = document.getElementById('tablaConsolidadoContainer');
+
+        if (!gradoSel || !mesInput) {
+            container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">Por favor, seleccione un grado y un mes a consultar.</p>';
+            return;
+        }
+
+        let [anioStr, mesStr] = mesInput.split('-');
+        let anio = parseInt(anioStr);
+        let mes = parseInt(mesStr);
+
+        let diasMes = obtenerDiasHabilesMes(anio, mes);
+        let estudiantes = baseDatosEstudiantes[gradoSel];
+
+        let pInicio = document.getElementById('periodoInicio').value;
+        let pFin = document.getElementById('periodoFin').value;
+        let fechasPeriodoFaltas = obtenerFechasEntre(pInicio, pFin);
+
+        let html = `<div class="table-responsive"><table>`;
+        html += `<thead><tr>`;
+        html += `<th rowspan="2" style="width: 35px;">N°</th>`;
+        html += `<th rowspan="2" style="text-align: left; min-width: 200px;">Apellidos y Nombres del Estudiante</th>`;
+        
+        diasMes.forEach(d => {
+            html += `<th class="col-dia">${d.letra}<br><span class="col-sub">${d.diaMes}/${d.mesNum}</span></th>`;
+        });
+
+        html += `<th class="summary-cell summary-header" rowspan="2" title="Total Asistencias (T)">Total Asist. (T)</th>`;
+        html += `<th class="summary-cell summary-header" rowspan="2" title="Total Tardanzas (A)">Total Tard. (A)</th>`;
+        html += `<th class="summary-cell summary-header" rowspan="2" title="Total Faltas (F) según Periodo">Total Faltas (F)</th>`;
+        html += `</tr></thead><tbody>`;
+
+        let sumaGradoT = 0;
+        let sumaGradoA = 0;
+        let sumaGradoF = 0;
+
+        estudiantes.forEach((est, index) => {
+            let totalT = 0; 
+            let totalA = 0; 
+            let totalFPeriodo = 0;
+
+            diasMes.forEach(d => {
+                let regDia = baseAsistencias[d.fechaKey] && baseAsistencias[d.fechaKey][est.nombre];
+                if (regDia) {
+                    if (regDia.estado === 'T') totalT++;
+                    else if (regDia.estado === 'A') totalA++;
+                }
+            });
+
+            if (fechasPeriodoFaltas.length > 0) {
+                fechasPeriodoFaltas.forEach(fKey => {
+                    let reg = baseAsistencias[fKey] && baseAsistencias[fKey][est.nombre];
+                    if (!reg || (reg.estado !== 'T' && reg.estado !== 'A')) {
+                        totalFPeriodo++;
+                    }
+                });
+            }
+
+            sumaGradoT += totalT;
+            sumaGradoA += totalA;
+            sumaGradoF += totalFPeriodo;
+
+            html += `<tr>`;
+            html += `<td>${index + 1}</td>`;
+            html += `<td style="font-weight: 500;">${est.nombre}</td>`;
+
+            diasMes.forEach(d => {
+                let regDia = baseAsistencias[d.fechaKey] && baseAsistencias[d.fechaKey][est.nombre];
+                let estado = "F"; 
+                if (regDia) estado = regDia.estado;
+
+                if (estado === 'T') {
+                    html += `<td><span class="badge badge-t" title="Temprano">T</span></td>`;
+                } else if (estado === 'A') {
+                    html += `<td><span class="badge badge-a" title="Tarde">A</span></td>`;
+                } else {
+                    html += `<td><span class="badge badge-f" title="Falta">F</span></td>`;
+                }
+            });
+
+            html += `<td class="summary-cell" style="color: var(--success);">${totalT}</td>`;
+            html += `<td class="summary-cell" style="color: var(--warning);">${totalA}</td>`;
+            html += `<td class="summary-cell" style="color: var(--danger);">${totalFPeriodo}</td>`;
+            html += `</tr>`;
+        });
+
+        html += `<tr class="total-row">`;
+        html += `<td colspan="2" style="text-align: right;">SUMATORIA TOTAL DEL GRADO (${document.getElementById('gradoSelect').options[document.getElementById('gradoSelect').selectedIndex].text}):</td>`;
+        
+        diasMes.forEach(() => {
+            html += `<td>-</td>`;
+        });
+
+        html += `<td style="color: var(--success); font-size: 0.9rem;">${sumaGradoT}</td>`;
+        html += `<td style="color: var(--warning); font-size: 0.9rem;">${sumaGradoA}</td>`;
+        html += `<td style="color: var(--danger); font-size: 0.9rem;">${sumaGradoF}</td>`;
+        html += `</tr>`;
+
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+    }
+
+    function renderizarEstadisticas() {
+        const gradoSel = document.getElementById('gradoSelect').value;
+        const mesInput = document.getElementById('mesSeleccionado').value;
+        const statsTextDetails = document.getElementById('statsTextDetails');
+
+        if (!gradoSel || !mesInput) {
+            statsTextDetails.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Seleccione un grado y un mes para ver los datos estadísticos.</p>';
+            return;
+        }
+
+        let datos = calcularDatosTotalesGrado();
+        if (!datos) return;
+
+        let totalRegistros = datos.sumaT + datos.sumaA + datos.sumaF;
+        let pT = totalRegistros > 0 ? ((datos.sumaT / totalRegistros) * 100).toFixed(1) : 0;
+        let pA = totalRegistros > 0 ? ((datos.sumaA / totalRegistros) * 100).toFixed(1) : 0;
+        let pF = totalRegistros > 0 ? ((datos.sumaF / totalRegistros) * 100).toFixed(1) : 0;
+
+        statsTextDetails.innerHTML = `
+            <strong>Resumen Estadístico del Grado:</strong><br>
+            🟢 <strong>Total Asistencias (Temprano):</strong> ${datos.sumaT} (${pT}%)<br>
+            🟡 <strong>Total Tardanzas:</strong> ${datos.sumaA} (${pA}%)<br>
+            🔴 <strong style="color: var(--danger);">Total Faltas:</strong> <span style="color: var(--danger); font-weight:bold;">${datos.sumaF} (${pF}%)</span><br>
+            📦 <strong>Total Acumulado Registros:</strong> ${totalRegistros}
+        `;
+
+        const ctx = document.getElementById('pieChartAsistencia').getContext('2d');
+        
+        if (miGraficoCircular) {
+            miGraficoCircular.destroy();
+        }
+
+        miGraficoCircular = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Asistencias (T)', 'Tardanzas (A)', 'Faltas (F)'],
+                datasets: [{
+                    data: [datos.sumaT, datos.sumaA, datos.sumaF],
+                    backgroundColor: [
+                        '#27ae60', 
+                        '#f39c12', 
+                        '#e74c3c'  
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
