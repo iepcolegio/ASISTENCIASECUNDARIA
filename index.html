@@ -6,6 +6,7 @@
     <title>Sistema de Asistencia QR - Consolidado Mensual Avanzado</title>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #1e3d59;
@@ -333,6 +334,31 @@
 </div>
 
 <script>
+    // Inicializar Supabase con tus credenciales
+const SUPABASE_URL = 'https://fvptpwpvqvvgtmogzmfy.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cHRwd3B2cXZ2Z3Rtb2d6bWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NDA0MzgsImV4cCI6MjEwMzQxNjQzOH0.WRYOiE5LsMX0gASj1KLVqv26yjMnSK_UDVMTKC6nHPg';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Ejemplo para guardar un escaneo directamente en Supabase al momento de escanear:
+async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
+    const { data, error } = await _supabase
+        .from('asistencias_qr')
+        .insert([
+            { 
+              fecha: fechaKeyHoy, 
+              nombre_estudiante: nombre, 
+              grado: grado, 
+              estado: estado, 
+              hora: horaStr 
+            }
+        ]);
+
+    if (error) {
+        console.error('Error al guardar en Supabase:', error);
+    } else {
+        console.log('Guardado en la nube exitosamente');
+    }
+}
     const baseDatosEstudiantes = {
         "1": [
             { nombre: "ABURTO PEREZ NARDA" }, { nombre: "ABURTO ZAMUDIO ANA TALIA" }, { nombre: "AVALOS HERRERA THIAGO" },
@@ -387,6 +413,14 @@
             { nombre: "SILOPU ARCOS MARIA DEL CARMEN" }, { nombre: "SUAREZ ARCOS AYTANA MARIA M." }, { nombre: "SUAREZ SANCHEZ DEYVID DAVID" }
         ]
     };
+    // Escuchar cambios en tiempo real en la tabla de hoy
+_supabase
+  .channel('cambios-asistencia')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'asistencias_qr' }, payload => {
+      // Volver a consultar los datos de Supabase para actualizar la tabla en pantalla
+      cargarAsistenciasDeHoy();
+  })
+  .subscribe();
 
     let baseAsistencias = JSON.parse(localStorage.getItem('qr_asistencias_mensual')) || {};
     let vistaActual = 'table';
