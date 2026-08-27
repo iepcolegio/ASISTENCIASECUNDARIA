@@ -6,7 +6,7 @@
     <title>Sistema de Asistencia QR - Consolidado Mensual Avanzado</title>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #1e3d59;
@@ -52,7 +52,6 @@
             width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 5px; box-sizing: border-box; font-size: 0.95rem;
         }
 
-        /* Estructura en dos columnas (Izquierda: Cámara, Derecha: Ventana en vivo) */
         .main-scanner-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -67,10 +66,8 @@
             height: 100%;
             box-sizing: border-box;
         }
-        /* Cámara más grande */
         #reader { width: 100%; max-width: 500px; margin: 15px auto; border-radius: 8px; overflow: hidden; display: none; }
         
-        /* Ventana de escaneos en vivo (Lado Derecho) */
         #liveScannerWindow {
             display: none;
             background: #fff;
@@ -102,7 +99,6 @@
         .btn-delete { background-color: var(--danger); }
         .btn-periodo { background-color: #27ae60; }
         .btn-stats { background-color: #009688; }
-        .btn-save { background-color: #27ae60; }
 
         .status-box {
             padding: 15px; border-radius: 6px; text-align: center;
@@ -198,18 +194,15 @@
             .main-scanner-layout { grid-template-columns: 1fr; }
         }
 
-        /* Configuración de Impresión Adaptativa */
         @media print {
             @page { size: landscape; margin: 10mm; }
             .no-print, button { display: none !important; }
             
-            /* Si el modal del consolidado está abierto, imprimimos solo el modal */
             body.modal-open .container { display: none !important; }
             body.modal-open .modal { position: relative !important; display: block !important; background: none !important; padding: 0 !important; overflow: visible !important; }
             body.modal-open .modal-content { box-shadow: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
             body.modal-open .table-responsive { max-height: none !important; overflow: visible !important; border: none !important; }
             
-            /* Si el modal está cerrado, imprimimos la ventana en vivo lateral */
             body:not(.modal-open) .container > *:not(.main-scanner-layout) { display: none !important; }
             body:not(.modal-open) .scanner-section { display: none !important; }
             body:not(.modal-open) #liveScannerWindow { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
@@ -241,16 +234,13 @@
         </div>
     </div>
 
-    <!-- Layout en dos columnas -->
     <div class="main-scanner-layout">
-        <!-- Lado Izquierdo: Cámara más grande -->
         <div class="scanner-section">
             <button class="btn-cam" onclick="toggleCamera()">📷 Activar / Detener Cámara QR</button>
             <div id="reader"></div>
             <p style="margin-top: 15px; font-size: 0.85rem; color: #e67e22; font-weight: bold;">⚡ Los escaneos se guardan AUTOMÁTICAMENTE al instante.</p>
         </div>
 
-        <!-- Lado Derecho: Ventana en tiempo real -->
         <div id="liveScannerWindow">
             <h3 style="margin-top: 0; color: var(--primary); font-size: 1rem; text-align: center;">📋 Estudiantes Escaneados Hoy (Últimos arriba)</h3>
             <div class="live-table-container">
@@ -269,10 +259,6 @@
                     </tbody>
                 </table>
             </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-
-               
-            </div>
         </div>
     </div>
 
@@ -284,7 +270,6 @@
     </div>
 </div>
 
-<!-- Modal Consolidado Mensual Ampliado -->
 <div id="reportModal" class="modal">
     <div class="modal-content">
         <span class="close no-print" onclick="cerrarModal()">&times;</span>
@@ -341,31 +326,27 @@
 </div>
 
 <script>
-    // Inicializar Supabase con tus credenciales
-const SUPABASE_URL = 'https://fvptpwpvqvvgtmogzmfy.supabase.co/rest/v1/';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cHRwd3B2cXZ2Z3Rtb2d6bWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NDA0MzgsImV4cCI6MjEwMzQxNjQzOH0.WRYOiE5LsMX0gASj1KLVqv26yjMnSK_UDVMTKC6nHPg';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const SUPABASE_URL = 'https://fvptpwpvqvvgtmogzmfy.supabase.co/rest/v1/';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cHRwd3B2cXZ2Z3Rtb2d6bWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NDA0MzgsImV4cCI6MjEwMzQxNjQzOH0.WRYOiE5LsMX0gASj1KLVqv26yjMnSK_UDVMTKC6nHPg';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Ejemplo para guardar un escaneo directamente en Supabase al momento de escanear:
-async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
-    const { data, error } = await _supabase
-        .from('asistencias_qr')
-        .insert([
-            { 
-              fecha: fechaKeyHoy, 
-              nombre_estudiante: nombre, 
-              grado: grado, 
-              estado: estado, 
-              hora: horaStr 
-            }
-        ]);
+    const hoyObj = new Date();
+    document.getElementById('currentDate').value = hoyObj.toLocaleDateString();
+    
+    const yyyy = hoyObj.getFullYear();
+    const mm = String(hoyObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoyObj.getDate()).padStart(2, '0');
+    const fechaKeyHoy = `${yyyy}-${mm}-${dd}`;
 
-    if (error) {
-        console.error('Error al guardar en Supabase:', error);
-    } else {
-        console.log('Guardado en la nube exitosamente');
-    }
-}
+    document.getElementById('mesSeleccionado').value = `${yyyy}-${mm}`;
+    document.getElementById('periodoInicio').value = `${yyyy}-${mm}-01`;
+    document.getElementById('periodoFin').value = fechaKeyHoy;
+
+    let baseAsistencias = JSON.parse(localStorage.getItem('qr_asistencias_mensual')) || {};
+    let vistaActual = 'table';
+    let miGraficoCircular = null;
+    let scannerQR = null;
+
     const baseDatosEstudiantes = {
         "1": [
             { nombre: "ABURTO PEREZ NARDA" }, { nombre: "ABURTO ZAMUDIO ANA TALIA" }, { nombre: "AVALOS HERRERA THIAGO" },
@@ -421,32 +402,65 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
         ]
     };
 
-    // Escuchar cambios en tiempo real en la tabla de hoy
-_supabase
-  .channel('cambios-asistencia')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'asistencias_qr' }, payload => {
-      // Volver a consultar los datos de Supabase para actualizar la tabla en pantalla
-      cargarAsistenciasDeHoy();
-  })
-  .subscribe();
+    // Función para guardar el escaneo directamente en Supabase
+    async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
+        const { data, error } = await _supabase
+            .from('asistencias_qr')
+            .insert([
+                { 
+                    fecha: fechaKeyHoy, 
+                    nombre_estudiante: nombre, 
+                    grado: grado, 
+                    estado: estado, 
+                    hora: horaStr 
+                }
+            ]);
 
-    let baseAsistencias = JSON.parse(localStorage.getItem('qr_asistencias_mensual')) || {};
-    let vistaActual = 'table';
-    let miGraficoCircular = null;
+        if (error) {
+            console.error('Error al guardar en Supabase:', error);
+        } else {
+            console.log('Guardado en la nube exitosamente');
+        }
+    }
 
-    const hoyObj = new Date();
-    document.getElementById('currentDate').value = hoyObj.toLocaleDateString();
-    
-    const yyyy = hoyObj.getFullYear();
-    const mm = String(hoyObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(hoyObj.getDate()).padStart(2, '0');
-    const fechaKeyHoy = `${yyyy}-${mm}-${dd}`;
+    // Función para descargar y sincronizar la asistencia actual desde Supabase
+    async function cargarAsistenciasDeHoy() {
+        const { data, error } = await _supabase
+            .from('asistencias_qr')
+            .select('*')
+            .eq('fecha', fechaKeyHoy);
 
-    document.getElementById('mesSeleccionado').value = `${yyyy}-${mm}`;
-    document.getElementById('periodoInicio').value = `${yyyy}-${mm}-01`;
-    document.getElementById('periodoFin').value = fechaKeyHoy;
+        if (error) {
+            console.error('Error al cargar asistencias:', error);
+            return;
+        }
 
-    let scannerQR = null;
+        if (!baseAsistencias[fechaKeyHoy]) {
+            baseAsistencias[fechaKeyHoy] = {};
+        }
+
+        data.forEach(reg => {
+            baseAsistencias[fechaKeyHoy][reg.nombre_estudiante] = {
+                estado: reg.estado,
+                hora: reg.hora,
+                grado: reg.grado
+            };
+        });
+
+        localStorage.setItem('qr_asistencias_mensual', JSON.stringify(baseAsistencias));
+        actualizarTablaEnVivo();
+    }
+
+    // Escuchar cambios en tiempo real en la tabla de Supabase para actualizar otros equipos
+    _supabase
+      .channel('cambios-asistencia')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'asistencias_qr' }, payload => {
+          cargarAsistenciasDeHoy();
+      })
+      .subscribe();
+
+    // Cargar datos al iniciar la página
+    cargarAsistenciasDeHoy();
 
     function toggleCamera() {
         const readerEl = document.getElementById('reader');
@@ -467,7 +481,7 @@ _supabase
         }
     }
 
-    function onScanSuccess(decodedText) {
+    async function onScanSuccess(decodedText) {
         let nombre = decodedText.trim().toUpperCase();
         let gradoEncontrado = null;
 
@@ -502,6 +516,9 @@ _supabase
             box.className = "status-box status-tarde";
             box.innerText = `⚠️ TARDE (Automático): ${nombre} (${gradoEncontrado}°) - ${horaStr}`;
         }
+
+        // Llamada agregada para enviar el registro a Supabase inmediatamente
+        await guardarEscaneoEnSupabase(nombre, gradoEncontrado, estado, horaStr);
 
         if (!baseAsistencias[fechaKeyHoy]) {
             baseAsistencias[fechaKeyHoy] = {};
@@ -547,19 +564,17 @@ _supabase
         tbody.innerHTML = html;
     }
 
-   
-
     function abrirReporteConsolidado() {
         document.getElementById('resAux').innerText = document.getElementById('auxiliarName').value || "No especificado";
         document.getElementById('resAnio').innerText = document.getElementById('anioLectivo').value;
         document.getElementById('reportModal').style.display = 'block';
-        document.body.classList.add('modal-open'); // Activa la clase para impresión limpia del modal
+        document.body.classList.add('modal-open');
         renderizarConsolidadoMensual();
     }
 
     function cerrarModal() {
         document.getElementById('reportModal').style.display = 'none';
-        document.body.classList.remove('modal-open'); // Remueve la clase del modal
+        document.body.classList.remove('modal-open');
     }
 
     function eliminarDatosConsolidado() {
