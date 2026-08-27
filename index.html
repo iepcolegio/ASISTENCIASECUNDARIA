@@ -6,7 +6,7 @@
     <title>Sistema de Asistencia QR - Consolidado Mensual Avanzado</title>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #1e3d59;
@@ -198,18 +198,25 @@
             .main-scanner-layout { grid-template-columns: 1fr; }
         }
 
-        /* Configuración de Impresión Inteligente */
+        /* Configuración de Impresión Adaptativa */
         @media print {
-            body * { visibility: hidden; }
-            #liveScannerWindow, #liveScannerWindow * { visibility: visible; }
-            #liveScannerWindow {
-                position: absolute; left: 0; top: 0; width: 100%;
-                border: none; box-shadow: none; padding: 0; margin: 0;
-            }
-            #liveScannerWindow button { display: none !important; }
-            .live-table-container { max-height: none !important; overflow: visible !important; border: none !important; }
-            table { width: 100% !important; font-size: 10pt; }
-            th, td { padding: 8px; border: 1px solid #000; }
+            @page { size: landscape; margin: 10mm; }
+            .no-print, button { display: none !important; }
+            
+            /* Si el modal del consolidado está abierto, imprimimos solo el modal */
+            body.modal-open .container { display: none !important; }
+            body.modal-open .modal { position: relative !important; display: block !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+            body.modal-open .modal-content { box-shadow: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body.modal-open .table-responsive { max-height: none !important; overflow: visible !important; border: none !important; }
+            
+            /* Si el modal está cerrado, imprimimos la ventana en vivo lateral */
+            body:not(.modal-open) .container > *:not(.main-scanner-layout) { display: none !important; }
+            body:not(.modal-open) .scanner-section { display: none !important; }
+            body:not(.modal-open) #liveScannerWindow { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            body:not(.modal-open) .live-table-container { max-height: none !important; overflow: visible !important; border: none !important; }
+            
+            table { width: 100% !important; font-size: 8pt !important; }
+            th, td { padding: 4px !important; border: 1px solid #000 !important; }
         }
     </style>
 </head>
@@ -362,7 +369,7 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
     const baseDatosEstudiantes = {
         "1": [
             { nombre: "ABURTO PEREZ NARDA" }, { nombre: "ABURTO ZAMUDIO ANA TALIA" }, { nombre: "AVALOS HERRERA THIAGO" },
-            { nombre: "AVALOS CHUMPITAZ ZOE" }, { nombre: "CHUMPITAZ BALTAZAR KIARA" }, { nombre: "CRISPIN QUISPE DAYRO" },
+            { nombre: "AVALOS CHUMPITAZ" }, { nombre: "CHUMPITAZ BALTAZAR KIARA" }, { nombre: "CRISPIN QUISPE DAYRO" },
             { nombre: "FLORES SAAVEDRA ALEJANDRA" }, { nombre: "GARCIA FERNANDEZ BANDES WILLIAM" }, { nombre: "MALASQUEZ CHUMPITAZ ANGEL" },
             { nombre: "MALASQUEZ CHUMPITAZ ROXETTE" }, { nombre: "MALASQUEZ LOZANO ANAHI" }, { nombre: "MALASQUEZ VILLALOBOS KAZUMI" },
             { nombre: "OCHOA QUISPE ARELIZ AIXA" }, { nombre: "PIGUAY VASQUEZ LUIS GERARD" }, { nombre: "PIZANGO FLORES SELVIA" },
@@ -371,7 +378,7 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
             { nombre: "SALAZAR NEYRA JAIRO" }
         ],
         "2": [
-            { nombre: "ABURTO ZAVALA NAIRA MAITE" }, { nombre: "ACUÑA QUISPE ALICIA NICOLE" }, { nombre: "AGUILAR NEYRA ESEFANI ABIGAIL" },
+            { nombre: "ABURTO ZAVALA NAIRA" }, { nombre: "ACUÑA QUISPE ALICIA NICOLE" }, { nombre: "AGUILAR NEYRA ESEFANI ABIGAIL" },
             { nombre: "ARCOS EGUSQUIZA LEONARDO" }, { nombre: "ARIAS LIMA ALESSIA BRIANA" }, { nombre: "ARIAS SALINAS KAHORI MARLENY" },
             { nombre: "ARIAS VILLALOBOS JEAN POOL" }, { nombre: "AVALOS ARIAS JOSE MARIA" }, { nombre: "BENAVENTE MALASQUEZ ISAAC EDUARDO" },
             { nombre: "CANDELA CASTILLO ESTEBAN" }, { nombre: "CANDELA PEREZ JASUE" }, { nombre: "CASILLA ARCOS KAORY KATSUMY" },
@@ -382,7 +389,7 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
             { nombre: "GARCIA ARIAS JIMENA" }
         ],
         "3": [
-            { nombre: "ALLANTA QUIROZ THAMARA LUCIA" }, { nombre: "AVALOS ORBE SARAI KARUMI" }, { nombre: "AVALOS VASQUEZ JUAN JOSE" },
+            { nombre: "ALLANTA QUIROZ THAMARA" }, { nombre: "AVALOS ORBE SARAI KARUMI" }, { nombre: "AVALOS VASQUEZ JUAN JOSE" },
             { nombre: "CAMPOS MERCADO KATHERINE" }, { nombre: "CARBAJAL RIVERA EDGAR GEORGE GABRIEL" }, { nombre: "CASTELL TENEMAS NAYLIN YAMIL" },
             { nombre: "CHOZ CISNEROS JUAN ANDRES" }, { nombre: "CHUMPITAZ CERRON HARUMI XIOMARA" }, { nombre: "DAVILA VARGAS JHELEN NAOMI" },
             { nombre: "ESQUEN MEJIA DARREL ANDRE" }, { nombre: "FRANCIA HERNANDEZ EDISON JOSEMARIA" }, { nombre: "GARCIA MALASQUEZ TAYRA ANGELY" },
@@ -401,7 +408,7 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
             { nombre: "TOMAS PULIDO ALLISON TATIANA" }
         ],
         "5": [
-            { nombre: "ABURTO PEREZ YASMIN GABRIELA" }, { nombre: "ALIAGA MANIHUARI LEONARDO DAVID" }, { nombre: "ANGELES CHUMPITAZ CHERLIT FIORELLA" },
+            { nombre: "ABURTO PEREZ YASMIN" }, { nombre: "ALIAGA MANIHUARI LEONARDO DAVID" }, { nombre: "ANGELES CHUMPITAZ CHERLIT FIORELLA" },
             { nombre: "ARANA VILCA MARIA" }, { nombre: "ARIAS CAMPOS FABIAN ALEXANDER" }, { nombre: "ARIAS LIMA AXEL FRANCISCO" },
             { nombre: "ARIAS VILLALOBOS YASURI" }, { nombre: "AVALOS AVALOS LUHANA BELEN" }, { nombre: "AVALOS QUISPE VICTOR ALONSO SAMIR" },
             { nombre: "CAMPOS AQUINO ABIGAIL GUADALUPE" }, { nombre: "CAMPOS BARTOLO DANY DANIEL" }, { nombre: "CAMPOS NAPAN LUZ ANDREA" },
@@ -413,6 +420,7 @@ async function guardarEscaneoEnSupabase(nombre, grado, estado, horaStr) {
             { nombre: "SILOPU ARCOS MARIA DEL CARMEN" }, { nombre: "SUAREZ ARCOS AYTANA MARIA M." }, { nombre: "SUAREZ SANCHEZ DEYVID DAVID" }
         ]
     };
+
     // Escuchar cambios en tiempo real en la tabla de hoy
 _supabase
   .channel('cambios-asistencia')
@@ -548,11 +556,13 @@ _supabase
         document.getElementById('resAux').innerText = document.getElementById('auxiliarName').value || "No especificado";
         document.getElementById('resAnio').innerText = document.getElementById('anioLectivo').value;
         document.getElementById('reportModal').style.display = 'block';
+        document.body.classList.add('modal-open'); // Activa la clase para impresión limpia del modal
         renderizarConsolidadoMensual();
     }
 
     function cerrarModal() {
         document.getElementById('reportModal').style.display = 'none';
+        document.body.classList.remove('modal-open'); // Remueve la clase del modal
     }
 
     function eliminarDatosConsolidado() {
