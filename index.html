@@ -270,7 +270,7 @@
                 </table>
             </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn-save" onclick="guardarSesionEnDirecto()">💾 Guardar Registro</button>
+
                 <button class="btn-print" onclick="window.print()">🖨️ Imprimir Lista</button>
             </div>
         </div>
@@ -547,10 +547,7 @@ _supabase
         tbody.innerHTML = html;
     }
 
-    function guardarSesionEnDirecto() {
-        localStorage.setItem('qr_asistencias_mensual', JSON.stringify(baseAsistencias));
-        alert("¡Los registros escaneados en directo se han guardado correctamente en el sistema!");
-    }
+   
 
     function abrirReporteConsolidado() {
         document.getElementById('resAux').innerText = document.getElementById('auxiliarName').value || "No especificado";
