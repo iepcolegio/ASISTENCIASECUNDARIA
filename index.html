@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Asistencia QR - Consolidado Mensual Avanzado</title>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -326,7 +326,7 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://fvptpwpvqvvgtmogzmfy.supabase.co/rest/v1/';
+    const SUPABASE_URL = 'https://fvptpwpvqvvgtmogzmfy.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cHRwd3B2cXZ2Z3Rtb2d6bWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NDA0MzgsImV4cCI6MjEwMzQxNjQzOH0.WRYOiE5LsMX0gASj1KLVqv26yjMnSK_UDVMTKC6nHPg';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
