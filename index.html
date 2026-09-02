@@ -99,6 +99,8 @@
         .btn-delete { background-color: var(--danger); }
         .btn-periodo { background-color: #27ae60; }
         .btn-stats { background-color: #009688; }
+        .btn-export { background-color: #2c3e50; }
+        .btn-import { background-color: #16a085; }
 
         .status-box {
             padding: 15px; border-radius: 6px; text-align: center;
@@ -266,6 +268,9 @@
 
     <div class="btn-group">
         <button class="btn-report" onclick="abrirReporteConsolidado()">📋 Ver Consolidado Mensual</button>
+        <button class="btn-export" onclick="exportarDatosAsistencia()">💾 Exportar Copia de Seguridad</button>
+        <button class="btn-import" onclick="document.getElementById('importFile').click()">📂 Importar Copia de Seguridad</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importarDatosAsistencia(event)">
         <button class="btn-delete" onclick="eliminarDatosConsolidado()">🗑️ Eliminar Datos de Consolidado</button>
     </div>
 </div>
@@ -518,7 +523,6 @@
             box.innerText = `⚠️ TARDE (Automático): ${nombre} (${gradoEncontrado}°) - ${horaStr}`;
         }
 
-        // Llamada agregada para enviar el registro a Supabase inmediatamente
         await guardarEscaneoEnSupabase(nombre, gradoEncontrado, estado, horaStr);
 
         if (!baseAsistencias[fechaKeyHoy]) {
@@ -563,6 +567,55 @@
             html += `</tr>`;
         });
         tbody.innerHTML = html;
+    }
+
+    // Funciones de Exportación e Importación de Copia de Seguridad Local
+    function exportarDatosAsistencia() {
+        const datosStr = JSON.stringify(baseAsistencias, null, 2);
+        const blob = new Blob([datosStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_asistencia_qr_${fechaKeyHoy}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importarDatosAsistencia(event) {
+        const archivo = event.target.files[0];
+        if (!archivo) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const datosImportados = JSON.parse(e.target.result);
+                if (typeof datosImportados === 'object' && datosImportados !== null) {
+                    baseAsistencias = datosImportados;
+                    localStorage.setItem('qr_asistencias_mensual', JSON.stringify(baseAsistencias));
+                    actualizarTablaEnVivo();
+                    
+                    if (document.getElementById('reportModal').style.display === 'block') {
+                        renderizarConsolidadoMensual();
+                    }
+
+                    const box = document.getElementById('statusBox');
+                    box.style.display = 'block';
+                    box.className = "status-box status-temprano";
+                    box.innerText = "📂 Copia de seguridad importada exitosamente en este equipo.";
+                } else {
+                    throw new Error("Formato inválido");
+                }
+            } catch (error) {
+                const box = document.getElementById('statusBox');
+                box.style.display = 'block';
+                box.className = "status-box status-tarde";
+                box.innerText = "❌ Error al importar el archivo. Asegúrate de que sea un archivo JSON válido.";
+            }
+        };
+        reader.readAsText(archivo);
+        event.target.value = ''; // Limpiar input file
     }
 
     function abrirReporteConsolidado() {
